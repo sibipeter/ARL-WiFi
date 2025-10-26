@@ -1,94 +1,49 @@
-name: CI
+# ARLWiFi.spec
 
-on:
-  push:
-    branches: [ "main" ]
-    tags:
-      - "v*.*.*"   # triggers release build on version tags
-  pull_request:
-    branches: [ "main" ]
+block_cipher = None
 
-jobs:
-  lint-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+a = Analysis(
+    ['app/main.py'],
+    pathex=[],
+    binaries=[],
+    datas=[
+        ('assets/*', 'assets'),
+        ('db/*', 'db'),
+        ('logs/*', 'logs'),
+    ],
+    hiddenimports=['sqlite3'],
+    hookspath=[],
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+)
 
-    steps:
-      - uses: actions/checkout@v4
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='ARL-WiFi',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
+    icon='assets/icon.ico' if sys.platform == 'win32' else None,
+    version='assets/version.txt' if sys.platform == 'win32' else None,
+)
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install black isort flake8 mypy bandit pytest pytest-cov
-
-      - name: Black (format check)
-        run: black --check .
-
-      - name: isort (import order check)
-        run: isort --check-only .
-
-      - name: Flake8 (linting)
-        run: flake8 .
-
-      - name: mypy (type checking)
-        run: mypy .
-
-      - name: Bandit (security scan)
-        run: bandit -c .bandit -r .
-
-      - name: Run tests with coverage
-        run: pytest --maxfail=1 --disable-warnings -q --cov=. --cov-report=xml --cov-fail-under=80
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-          flags: py${{ matrix.python-version }}
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  build:
-    needs: lint-test
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Build executable using spec file
-        run: pyinstaller ARLWiFi.spec
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ARL-WiFi-${{ matrix.os }}
-          path: dist/ARL-WiFi*
-
-      - name: Create GitHub Release with notes
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/ARL-WiFi*
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='ARL-WiFi'
+)
