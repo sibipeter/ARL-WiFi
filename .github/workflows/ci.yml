@@ -24,8 +24,8 @@ jobs:
           python -m pip install --upgrade pip
           # Install runtime dependencies if requirements.txt exists
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Always install dev dependencies
-          pip install -r dev-requirements.txt
+          # Install dev dependencies if file exists
+          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
 
       - name: Run Black (check only)
         run: black --check .
@@ -34,7 +34,7 @@ jobs:
         run: isort --check-only .
 
       - name: Run flake8
-        run: flake8 app gui tests
+        run: flake8 .
 
       - name: Run pytest
         run: pytest --maxfail=1 --disable-warnings -q
