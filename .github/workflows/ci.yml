@@ -46,7 +46,7 @@ jobs:
 
       - name: Run tests with coverage
         run: pytest --maxfail=1 --disable-warnings -q \
-             --cov=app --cov=gui --cov=db --cov=tools \
+             --cov=. \
              --cov-report=xml --cov-fail-under=80
 
       - name: Upload coverage to Codecov
