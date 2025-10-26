@@ -1,4 +1,9 @@
-CompanyName=ARL Systems
-FileDescription=ARL-WiFi Manager
-ProductName=ARL-WiFi
-ProductVersion=__VERSION__
+- name: Inject version into version.txt
+  if: startsWith(github.ref, 'refs/tags/')
+  run: |
+    VERSION=${GITHUB_REF#refs/tags/}
+    if [[ "$RUNNER_OS" == "Windows" ]]; then
+      powershell -Command "(Get-Content assets/version.txt) -replace '__VERSION__', '$VERSION' | Set-Content assets/version.txt"
+    else
+      sed -i.bak "s/__VERSION__/$VERSION/" assets/version.txt
+    fi
