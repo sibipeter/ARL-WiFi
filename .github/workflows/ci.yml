@@ -6,36 +6,71 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      run_performance:
+        description: "Run performance profiling and load tests"
+        required: false
+        default: "false"
 
 jobs:
-  build-test-lint:
+  precommit:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          # Install runtime dependencies if requirements.txt exists
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Install dev dependencies if file exists
-          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+      - name: Install pre-commit
+        run: pip install pre-commit
 
-      - name: Run Black (check only)
-        run: black --check .
+      - name: Run pre-commit on all files
+        run: pre-commit run --all-files --show-diff-on-failure
 
-      - name: Run isort (check only)
-        run: isort --check-only .
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: flake8 .
 
-      - name: Run flake8
-        run: flake8 .
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt pytest coverage
+      - run: |
+          coverage run -m pytest
+          coverage xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
 
-      - name: Run pytest
-        run: pytest --maxfail=1 --disable-warnings -q
+  performance:
+    if: ${{ github.event.inputs.run_performance == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python tools/profile_cpu.py > cpu_profile.txt
+      - run: python tools/profile_mem.py > mem_profile.txt
+      - run: python tools/load_test.py > load_metrics.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: performance-artifacts
+          path: |
+            cpu_profile.txt
+            mem_profile.txt
+            load_metrics.txt

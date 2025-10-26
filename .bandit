@@ -1,0 +1,17 @@
+# Bandit configuration
+exclude_dirs:
+  - venv
+  - .venv
+  - __pycache__
+  - build
+  - dist
+  - "*.egg-info"
+
+targets:
+  - app
+  - gui
+  - db
+  - tools
+  - tests
+
+skips: []

@@ -1,0 +1,34 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.spec
+
+# Databases
+*.db
+
+# Alembic migration cache
+db/alembic/__pycache__/
+db/alembic/versions/__pycache__/
+
+# Logs and reports
+*.log
+*.coverage
+coverage.xml
+
+# IDE / editor settings
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
