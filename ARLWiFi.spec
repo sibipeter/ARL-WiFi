@@ -1,9 +1,12 @@
 # ARLWiFi.spec
 
+import sys
+from PyInstaller.utils.hooks import collect_submodules
+
 block_cipher = None
 
 a = Analysis(
-    ['app/main.py'],
+    ['main.py'],  # Update this path if your entry point is elsewhere
     pathex=[],
     binaries=[],
     datas=[
@@ -11,7 +14,7 @@ a = Analysis(
         ('db/*', 'db'),
         ('logs/*', 'logs'),
     ],
-    hiddenimports=['sqlite3'],
+    hiddenimports=collect_submodules('sqlite3'),
     hookspath=[],
     runtime_hooks=[],
     excludes=[],
