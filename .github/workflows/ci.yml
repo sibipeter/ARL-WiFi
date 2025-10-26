@@ -1,94 +1,43 @@
-name: CI
+build:
+  needs: lint-test
+  strategy:
+    matrix:
+      os: [ubuntu-latest, windows-latest, macos-latest]
+  runs-on: ${{ matrix.os }}
 
-on:
-  push:
-    branches: [ "main" ]
-    tags:
-      - "v*.*.*"   # triggers release build on version tags
-  pull_request:
-    branches: [ "main" ]
+  steps:
+    - uses: actions/checkout@v4
 
-jobs:
-  lint-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
 
-    steps:
-      - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
+    - name: Inject version into version.txt
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        sed -i.bak "s/__VERSION__/$VERSION/" assets/version.txt
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install black isort flake8 mypy bandit pytest pytest-cov
+    - name: Build executable using spec file
+      run: pyinstaller ARLWiFi.spec
 
-      - name: Black (format check)
-        run: black --check .
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ARL-WiFi-${{ matrix.os }}
+        path: dist/ARL-WiFi*
 
-      - name: isort (import order check)
-        run: isort --check-only .
-
-      - name: Flake8 (linting)
-        run: flake8 .
-
-      - name: mypy (type checking)
-        run: mypy .
-
-      - name: Bandit (security scan)
-        run: bandit -c .bandit -r .
-
-      - name: Run tests with coverage
-        run: pytest --maxfail=1 --disable-warnings -q --cov=. --cov-report=xml --cov-fail-under=80
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-          flags: py${{ matrix.python-version }}
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  build:
-    needs: lint-test
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Build executable using spec file
-        run: pyinstaller ARLWiFi.spec
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ARL-WiFi-${{ matrix.os }}
-          path: dist/ARL-WiFi*
-
-      - name: Create GitHub Release with notes
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/ARL-WiFi*
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create GitHub Release with notes
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/ARL-WiFi*
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
