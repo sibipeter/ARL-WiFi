@@ -46,4 +46,13 @@ jobs:
         run: bandit -c .bandit -r .
 
       - name: Run tests with coverage
-        run: pytest --maxfail=1 --disable-warnings -q --cov=app --cov=gui --cov=db --cov=tools --cov-report=xml
+        run: pytest --maxfail=1 --disable-warnings -q \
+       --cov=app --cov=gui --cov=db --cov=tools \
+       --cov-report=xml --cov-fail-under=80
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: py${{ matrix.python-version }}
+          fail_ci_if_error: true
