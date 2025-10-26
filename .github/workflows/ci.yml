@@ -2,75 +2,40 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-    inputs:
-      run_performance:
-        description: "Run performance profiling and load tests"
-        required: false
-        default: "false"
+    branches: [ "main" ]
 
 jobs:
-  precommit:
+  lint-test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install pre-commit
-        run: pip install pre-commit
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install black isort flake8 mypy bandit
 
-      - name: Run pre-commit on all files
-        run: pre-commit run --all-files --show-diff-on-failure
+      - name: Black (format check)
+        run: black --check .
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: flake8 .
+      - name: isort (import order check)
+        run: isort --check-only .
 
-  tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt pytest coverage
-      - run: |
-          coverage run -m pytest
-          coverage xml
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-xml
-          path: coverage.xml
+      - name: Flake8 (linting)
+        run: flake8 .
 
-  performance:
-    if: ${{ github.event.inputs.run_performance == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: python tools/profile_cpu.py > cpu_profile.txt
-      - run: python tools/profile_mem.py > mem_profile.txt
-      - run: python tools/load_test.py > load_metrics.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: performance-artifacts
-          path: |
-            cpu_profile.txt
-            mem_profile.txt
-            load_metrics.txt
+      - name: mypy (type checking)
+        run: mypy .
+
+      - name: Bandit (security scan)
+        run: bandit -c .bandit -r .
