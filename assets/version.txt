@@ -1,0 +1,4 @@
+CompanyName=ARL Systems
+FileDescription=ARL-WiFi Manager
+ProductName=ARL-WiFi
+ProductVersion=1.0.0
