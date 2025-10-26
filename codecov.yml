@@ -1,0 +1,18 @@
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+  status:
+    project:
+      default:
+        target: 80%        # fail if overall coverage < 80%
+        threshold: 1%      # allow small fluctuations
+    patch:
+      default:
+        target: 80%        # new code must also meet 80%
+
+ignore:
+  - "tests/*"              # don’t count test files toward coverage
+  - "setup.py"
+  - "docs/*"
