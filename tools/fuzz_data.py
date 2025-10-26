@@ -1,7 +1,7 @@
 import random
 
 
-def make_random_numbers(n: int):
+def make_random_numbers(n: int) -> list[int]:
     """
     Generate a list of pseudo-random numbers for fuzz testing.
     This is not security-sensitive, so using random is acceptable.
@@ -9,7 +9,7 @@ def make_random_numbers(n: int):
     return [random.randint(1, 100) % 10 for _ in range(n)]  # nosec B311
 
 
-def make_random_pairs(n: int):
+def make_random_pairs(n: int) -> list[tuple[int, int]]:
     """
     Generate a list of deterministic pairs for fuzz testing.
     """

@@ -1,5 +1,3 @@
-def test_smoke_placeholder():
+def test_smoke_placeholder() -> None:
     # Placeholder test to keep CI green until real tests are added
-    value = True
-    if not value:
-        raise AssertionError("Smoke test failed")
+    assert True  # nosec B101

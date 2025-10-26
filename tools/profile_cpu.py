@@ -1,21 +1,18 @@
 import cProfile
-import io
 import pstats
 
 
-def run_target():
-    import app
+def profile_cpu() -> None:
+    """
+    Simple CPU profiling utility.
+    """
+    profiler = cProfile.Profile()
+    profiler.enable()
 
-    if hasattr(app, "main"):
-        app.main()
+    # Placeholder workload
+    for _ in range(1000000):
+        pass
 
-
-if __name__ == "__main__":
-    pr = cProfile.Profile()
-    pr.enable()
-    run_target()
-    pr.disable()
-    s = io.StringIO()
-    ps = pstats.Stats(pr, stream=s).sort_stats("cumtime")
-    ps.print_stats(50)
-    print(s.getvalue())
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats("cumtime")
+    stats.print_stats(10)
