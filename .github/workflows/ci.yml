@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [ "main" ]
+    tags:
+      - "v*.*.*"   # triggers release build on version tags
   pull_request:
     branches: [ "main" ]
 
@@ -15,6 +17,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -26,21 +29,27 @@ jobs:
           pip install -r requirements.txt
           pip install black isort flake8 mypy bandit pytest pytest-cov
 
-      - name: Black
+      - name: Black (format check)
         run: black --check .
-      - name: isort
+
+      - name: isort (import order check)
         run: isort --check-only .
-      - name: Flake8
+
+      - name: Flake8 (linting)
         run: flake8 .
-      - name: mypy
+
+      - name: mypy (type checking)
         run: mypy .
-      - name: Bandit
+
+      - name: Bandit (security scan)
         run: bandit -c .bandit -r .
+
       - name: Run tests with coverage
         run: pytest --maxfail=1 --disable-warnings -q \
              --cov=app --cov=gui --cov=db --cov=tools \
              --cov-report=xml --cov-fail-under=80
-      - name: Upload coverage
+
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -56,6 +65,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -70,8 +80,17 @@ jobs:
         run: |
           pyinstaller --onefile --name ARL-WiFi app/__main__.py
 
-      - name: Upload artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: ARL-WiFi-${{ matrix.os }}
           path: dist/ARL-WiFi*
+
+      - name: Create GitHub Release with notes
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ARL-WiFi*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
