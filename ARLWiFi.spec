@@ -6,7 +6,7 @@ from PyInstaller.utils.hooks import collect_submodules
 block_cipher = None
 
 a = Analysis(
-    ['app/main.py'],  # ← Confirm this path matches your repo
+    ['app/main.py'],  # ← confirmed entry point
     pathex=[],
     binaries=[],
     datas=[
