@@ -57,10 +57,7 @@ jobs:
 
   build:
     needs: lint-test
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -78,8 +75,8 @@ jobs:
       - name: Inject version into version.txt
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          sed -i.bak "s/__VERSION__/$VERSION/" assets/version.txt || powershell -Command "(Get-Content assets/version.txt) -replace '__VERSION__', '$env:GITHUB_REF' | Set-Content assets/version.txt"
+          $version = "${{ github.ref_name }}"
+          (Get-Content assets/version.txt) -replace '__VERSION__', $version | Set-Content assets/version.txt
 
       - name: Build executable using spec file
         run: pyinstaller ARLWiFi.spec
@@ -87,14 +84,14 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ARL-WiFi-${{ matrix.os }}
-          path: dist/ARL-WiFi*
+          name: ARL-WiFi-windows
+          path: dist/ARL-WiFi.exe
 
       - name: Create GitHub Release with notes
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/ARL-WiFi*
+          files: dist/ARL-WiFi.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
